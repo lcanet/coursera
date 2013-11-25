@@ -5,3 +5,5 @@
 *.ear
 algs4p2/.classpath
 algs4p2/.project
+game/.idea
+game/node_modules
