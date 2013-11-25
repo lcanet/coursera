@@ -29,7 +29,6 @@ if process.argv.length isnt 3
 
 class ScoreRule
   constructor: (@players, @value) ->
-    @players.sort()
 
   isCompatible: (otherPlayers ) ->
     if otherPlayers.length != @players.length
