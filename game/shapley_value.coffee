@@ -19,59 +19,17 @@
 
 fs = require('fs')
 linereader = require('line-reader')
+CoalitionGame = require('./CoalitionGame')
 
 
 if process.argv.length isnt 3
   console.log "Usage: shapley_value input_data"
   process.exit 1
 
-# ########################### CLASS SCORE
-
-class ScoreRule
-  constructor: (@players, @value) ->
-
-  isCompatible: (otherPlayers ) ->
-    if otherPlayers.length != @players.length
-      return false
-    for i in [0...@players.length]
-      # the first time i'll be glad to use implicit type casting in js
-      if (@players[i] != '*' && ('' + @players[i] != '' + otherPlayers[i]))
-        return false
-    return true
-
-  toString: () ->
-    'v(' + @players + ') = ' + @value
-
 
 # ########################### CLASS COALITION
-class CoalitionGame
-  constructor: (@nb) ->
-    @scores = []
-
-  addScore: (x) ->
-    m = x.match(/([\d\*,]+)\s*=\s*(\d+)/)
-    if (m)
-      @scores.push new ScoreRule(m[1].split(','), parseInt(m[2]))
-
-
-  findMatchingScore: (players) ->
-    for sc in @scores
-      if sc.isCompatible(players)
-        return sc
-    return null
-
-  getScore: (players) ->
-    if players.length == 0
-      return 0
-
-    # try with given permutation
-    players.sort()
-    matching = this.findMatchingScore(players)
-
-    return matching.value if matching isnt null
-
-    console.log("WARN: cannot find a scoring for coalition set ", players);
-    return 0
+class ShapleyCalculator
+  constructor: (@game) ->
 
   fact: (x) ->
     return 1 if x == 1
@@ -92,21 +50,16 @@ class CoalitionGame
     return permutation.slice(0, permutation.indexOf(player))
 
   calculateShapleyValue: (player) ->
-    permutations = this.permutations([1..@nb])
+    permutations = this.permutations([1..@game.nb])
     sum = 0
     for permutation in permutations
       inferiors = this.findInferiors(permutation, player)
-      v2 = this.getScore(inferiors)
+      v2 = @game.getScore(inferiors)
       inferiors.push(player)
-      v1 = this.getScore(inferiors)
+      v1 = @game.getScore(inferiors)
       sum += (v1 - v2);
 
-    return sum / this.fact(@nb)
-
-  printCoalition: () ->
-    console.log "Game with #{@nb} players"
-    for sc in @scores
-      console.log "\t" +sc.toString()
+    return sum / this.fact(@game.nb)
 
 # ########################### PARSE
 
@@ -121,8 +74,9 @@ linereader.eachLine(process.argv[2], (line, last) ->
 
   if last
     coalition.printCoalition()
+    shapley = new ShapleyCalculator(coalition)
     for x in [1..coalition.nb]
-      shpValue = coalition.calculateShapleyValue x
+      shpValue = shapley.calculateShapleyValue x
       console.log "Player #{x} has shapley value #{shpValue}"
 )
 
