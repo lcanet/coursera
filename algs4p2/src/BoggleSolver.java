@@ -3,6 +3,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 
 /**
  * Boggle game solver alg4-pt2 hw
@@ -85,9 +86,27 @@ public class BoggleSolver {
 			throw new IllegalArgumentException("Dictionnary is mandatory");
 		}
 		dictionaryTrie = new BoggleDictionary();
-		for (String word : dictionary) {
+		String[] newDic = shuffle(dictionary);
+		for (String word : newDic) {
 			dictionaryTrie.add(word);
 		}
+	}
+
+	private String[] shuffle(String[] dictionary) {
+		// shuffle dictionary to get balanced trie
+		String[] newDic = new String[dictionary.length];
+		for (int i = 0; i < dictionary.length; i++) {
+			newDic[i] = dictionary[i];
+		}
+		Random random = new Random();
+		for (int i = 0; i < dictionary.length; i++) {
+			int x1 = random.nextInt(dictionary.length);
+			int x2 = random.nextInt(dictionary.length);
+			String s = newDic[x1];
+			newDic[x1] = newDic[x2];
+			newDic[x2] = s;
+		}
+		return newDic;
 	}
 
 	/**
@@ -136,20 +155,23 @@ public class BoggleSolver {
 		}
 		
 		// mark the current position as visited
-		VisitedPositions newVisitedPositions = new VisitedPositions(visitedPositions, x, y);
+		visitedPositions.setPosition(x, y, true);
 
 		for (int i = Math.max(0, x - 1); i <= Math.min(x + 1, board.rows() - 1); i++) {
 			for (int j = Math.max(0, y - 1); j <= Math.min(y + 1, board.cols() - 1); j++) {
-				if (newVisitedPositions.wasVisited(i, j)) {
+				if (visitedPositions.wasVisited(i, j)) {
 					continue;
 				}
 				String suffix = getSuffix(board, i, j);
 				DictionaryNode nextNode = dictionaryTrie.get(node.mid, suffix, 0);
 				if (nextNode != null) {
-					exploreBoard(words, board, i, j, newVisitedPositions, nextNode);
+					exploreBoard(words, board, i, j, visitedPositions, nextNode);
 				}
 			}
 		}
+		
+		visitedPositions.setPosition(x, y, false);
+		
 	}
 
 	/**
@@ -169,11 +191,11 @@ public class BoggleSolver {
 		public VisitedPositions(VisitedPositions visited, int i, int j) {
 			this.positions = Arrays.copyOf(visited.positions, visited.positions.length);
 			this.n = visited.n;
-			setPosition(i, j);
+			setPosition(i, j, true);
 		}
 
-		private void setPosition(int i, int j) {
-			this.positions[i * n + j] = true;
+		private void setPosition(int i, int j, boolean val) {
+			this.positions[i * n + j] = val;
 		}
 
 		public boolean wasVisited(int i, int j) {
