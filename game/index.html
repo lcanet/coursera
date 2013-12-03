@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Game theory samples</title>
+    <style type="text/css">
+        .payoffs-table td {
+            border: 1px solid #BBB;
+            min-width: 100px;
+            padding: 4px;
+        }
+        .header {
+            font-weight: bold;
+        }
+        .payoff-input {
+            width: 50px;
+        }
+        .payoff-input::-webkit-inner-spin-button,
+        .payoff-input::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        .ng-cloak {
+            display: none;
+        }
+        .psne {
+            background-color: yellow;
+        }
+    </style>
+</head>
+<body ng-app="TwoPlayerGame" ng-controller="MainController">
+
+<h2>Game theory samples : two player game</h2>
+<hr/>
+
+<form name="gameForm" class="ng-cloak">
+    <fieldset>
+        <legend>Game parameters :</legend>
+        <label>
+            Number of actions for player 1 :
+            <input type="number" ng-model="nbActions1" min="1" max="10" ng-change="rebuildPayoffsMatrix()"/>
+        </label>
+        <label>
+            Number of actions for player 2 :
+            <input type="number" ng-model="nbActions2" min="1" max="10" ng-change="rebuildPayoffsMatrix()"/>
+        </label>
+        <br/>
+        <table class="payoffs-table">
+            <tr>
+                <td class="header">
+                    P1 \ P2
+                </td>
+                <td ng-repeat="j in payoffs[0]" class="header">
+                    {{ $index }}
+                </td>
+            </tr>
+            <tr ng-repeat="i in payoffs">
+                <td class="header">
+                    {{ $index }}
+                </td>
+                <td ng-repeat="j in payoffs[$index]" ng-class="isPSNE($index, $parent.$index) ? 'psne' : ''">
+                    <input type="number" required  ng-model="j[0]" class="payoff-input" placeholder="player 1"/>
+                    <input type="number" required ng-model="j[1]" class="payoff-input" placeholder="player 2"/>
+                </td>
+            </tr>
+
+        </table>
+
+        <br/>
+        <button ng-click="analyzeGame()">Analyze game</button>
+
+    </fieldset>
+</form>
+
+<table class="analysis" ng-show="analysis != null" class="ng-cloak">
+    <tr>
+        <th>Zero-sum :</th>
+        <td>
+            {{ analysis.zeroSum }}
+        </td>
+    </tr>
+    <tr>
+        <th>Pure strategies nash equilibriums:</th>
+        <td>
+            <span ng-repeat="eq in analysis.psne">
+                {{ eq }}
+            </span>
+        </td>
+    </tr>
+</table>
+
+
+
+<script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.2.3/angular.min.js"></script>
+<script src="libs/coffee-script.js"></script>
+<script src="SimpleGame.coffee" type="text/coffeescript"></script>
+
+<script type="text/javascript">
+    angular.module('TwoPlayerGame', []);
+    function MainController($scope) {
+        $scope.nbActions1 = $scope.nbActions2 = 2;
+        $scope.payoffs = [];
+
+        $scope.rebuildPayoffsMatrix = function() {
+            for (i = 0; i < $scope.nbActions1; i++) {
+                if ($scope.payoffs.length <= i) {
+                    $scope.payoffs.push([]);
+                }
+                for (j = 0; j < $scope.nbActions2; j++ ) {
+                    if ($scope.payoffs[i].length <= j) {
+                        $scope.payoffs[i].push([0,0]);
+                    }
+                    $scope.payoffs[i].splice($scope.nbActions2);
+                }
+            }
+            $scope.payoffs.splice($scope.nbActions1);
+        };
+        $scope.rebuildPayoffsMatrix();
+
+        $scope.analyzeGame = function() {
+            if ($scope.gameForm.$valid) {
+                var game = new SimpleGame($scope.nbActions1, $scope.nbActions2);
+                game.setPayoffs($scope.payoffs);
+
+                console.log(game.getDominatedStrategies());
+                console.log(game.getParetoOptimalOutcomes());
+
+                $scope.analysis = {
+                    zeroSum : game.isZeroSum(),
+                    psne: game.getPureStrategyNashEquilibriums()
+                };
+            }
+        };
+        $scope.isPSNE = function(i,j){
+            if ($scope.analysis) {
+                for (x = 0; x < $scope.analysis.psne.length; x++) {
+                    if ($scope.analysis.psne[x][0] == i &&
+                        $scope.analysis.psne[x][1] == j) {
+                        return true
+                    }
+                }
+            }
+            return false;
+        };
+    }
+
+</script>
+
+
+</body>
+</html>
