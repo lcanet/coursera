@@ -43,25 +43,58 @@ class SimpleGame
           equilibriums.push([i, j])
     return equilibriums
 
-  isDominatedPlayer1Strategy: (action, strict=true) ->
-    for i in [0...@nbActions1]
-      if (i != action)
-        for j in [0...@nbActions2]
+  isDominantPlayer1Strategy: (action, strict=true) ->
+    for j in [0...@nbActions2]
+      for i in [0...@nbActions1]
+        if (i != action)
           p1 = this.getPayoff(i ,j)
           p2 = this.getPayoff(action ,j)
-          return false if (p1[0] < p2[0])
+          return false if (strict && p2[0] <= p1[0])
+          return false if (p2[0] < p1[0])
+    return true
+
+  isDominatedPlayer1Strategy: (action, strict=true) ->
+    for j in [0...@nbActions2]
+      for i in [0...@nbActions1]
+        if (i != action)
+          p1 = this.getPayoff(i ,j)
+          p2 = this.getPayoff(action ,j)
           return false if (strict && p1[0] <= p2[0])
+          return false if (p1[0] < p2[0])
+    return true
+
+
+  isDominantPlayer2Strategy: (action, strict=true) ->
+    for i in [0...@nbActions1]
+      for j in [0...@nbActions2]
+        if (j != action)
+          p1 = this.getPayoff(i ,j)
+          p2 = this.getPayoff(i, action)
+          return false if (strict && p2[1] <= p1[1])
+          return false if (p2[1] < p1[1])
     return true
 
   isDominatedPlayer2Strategy: (action, strict=true) ->
-    for j in [0...@nbActions2]
-      if (j != action)
-        for i in [0...@nbActions1]
+    for i in [0...@nbActions1]
+      for j in [0...@nbActions2]
+        if (j != action)
           p1 = this.getPayoff(i ,j)
           p2 = this.getPayoff(i, action)
-          return false if (p1[1] < p2[1])
           return false if (strict && p1[1] <= p2[1])
+          return false if (p1[1] < p2[1])
     return true
+
+  getDominantStrategies: (strict=true) ->
+    strategies = []
+    domStrategies = []
+    for i in [0...@nbActions1]
+      domStrategies.push i if this.isDominantPlayer1Strategy(i, strict)
+    strategies.push domStrategies
+    domStrategies = []
+    for j in [0...@nbActions2]
+      domStrategies.push j if this.isDominantPlayer2Strategy(j, strict)
+    strategies.push domStrategies
+    return strategies
 
   getDominatedStrategies: (strict=true) ->
     strategies = []
@@ -90,6 +123,14 @@ class SimpleGame
         outcomes.push [i, j] if this.isParetoOptimal(i,j)
     return outcomes
 
+  getMixedStrategy: ->
+    if @nbActions1 != 2 && @nbActions2 != 2
+      throw new Error("Only supported for 2x2 game")
+
+    return [
+      (this.getPayoff(1, 1)[0] - this.getPayoff(0, 1)[0]) / (this.getPayoff(0, 0)[0] + this.getPayoff(1,1)[0] - this.getPayoff(0, 1)[0] - this.getPayoff(1, 0)[0]),
+      (this.getPayoff(1, 1)[1] - this.getPayoff(1, 0)[1]) / (this.getPayoff(0, 0)[1] + this.getPayoff(1,1)[1] - this.getPayoff(0, 1)[1] - this.getPayoff(1, 0)[1])
+    ]
 
 module?.exports = SimpleGame
 window?.SimpleGame = SimpleGame

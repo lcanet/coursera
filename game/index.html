@@ -57,7 +57,7 @@
                 <td class="header">
                     {{ $index }}
                 </td>
-                <td ng-repeat="j in payoffs[$index]" ng-class="isPSNE($index, $parent.$index) ? 'psne' : ''">
+                <td ng-repeat="j in payoffs[$index]" ng-class="isPSNE($parent.$index, $index) ? 'psne' : ''">
                     <input type="number" required  ng-model="j[0]" class="payoff-input" placeholder="player 1"/>
                     <input type="number" required ng-model="j[1]" class="payoff-input" placeholder="player 2"/>
                 </td>
@@ -66,6 +66,8 @@
         </table>
 
         <br/>
+        <a href="" ng-click="loadPayoffs('prisoner')">Load prisoner dilemna</a>
+        &nbsp; - &nbsp;
         <button ng-click="analyzeGame()">Analyze game</button>
 
     </fieldset>
@@ -84,6 +86,89 @@
             <span ng-repeat="eq in analysis.psne">
                 {{ eq }}
             </span>
+        </td>
+    </tr>
+    <tr>
+        <th rowspan="2">Strictly dominant strategies:</th>
+        <td>
+            Player 1:
+            <span ng-repeat="dom in analysis.strictlyDominant[0]">
+                {{ dom }}
+            </span>
+            <span ng-show="analysis.strictlyDominant[0].length == 0">
+                none
+            </span>
+        </td>
+     </tr>
+     <tr>
+        <td>
+            Player 2:
+            <span ng-repeat="dom in analysis.strictlyDominant[1]">
+                {{ dom }}
+            </span>
+            <span ng-show="analysis.strictlyDominant[1].length == 0">
+                none
+            </span>
+        </td>
+    </tr>
+    <tr>
+        <th rowspan="2">Weakly Dominant strategies:</th>
+        <td>
+            Player 1:
+            <span ng-repeat="dom in analysis.weaklyDominant[0]">
+                {{ dom }}
+            </span>
+            <span ng-show="analysis.weaklyDominant[0].length == 0">
+                none
+            </span>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Player 2:
+            <span ng-repeat="dom in analysis.weaklyDominant[1]">
+                {{ dom }}
+            </span>
+            <span ng-show="analysis.weaklyDominant[1].length == 0">
+                none
+            </span>
+        </td>
+    </tr>
+    <tr>
+        <th rowspan="2">Dominated strategies:</th>
+        <td>
+            Player 1:
+            <span ng-repeat="dom in analysis.dominated[0]">
+                {{ dom }}
+            </span>
+            <span ng-show="analysis.dominated[0].length == 0">
+                none
+            </span>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            Player 2:
+            <span ng-repeat="dom in analysis.dominated[1]">
+                {{ dom }}
+            </span>
+            <span ng-show="analysis.dominated[1].length == 0">
+                none
+            </span>
+        </td>
+    </tr>
+    <tr>
+        <th>Pareto optimals:</th>
+        <td>
+            <span ng-repeat="eq in analysis.pareto">
+                {{ eq }}
+            </span>
+        </td>
+    </tr>
+    <tr>
+        <th>Mixed strategy:</th>
+        <td>
+            {{analysis.mixedStrategy}}
         </td>
     </tr>
 </table>
@@ -122,13 +207,17 @@
                 var game = new SimpleGame($scope.nbActions1, $scope.nbActions2);
                 game.setPayoffs($scope.payoffs);
 
-                console.log(game.getDominatedStrategies());
-                console.log(game.getParetoOptimalOutcomes());
-
                 $scope.analysis = {
                     zeroSum : game.isZeroSum(),
-                    psne: game.getPureStrategyNashEquilibriums()
+                    psne: game.getPureStrategyNashEquilibriums(),
+                    strictlyDominant: game.getDominantStrategies(true),
+                    weaklyDominant: game.getDominantStrategies(false),
+                    dominated: game.getDominatedStrategies(true),
+                    pareto: game.getParetoOptimalOutcomes()
                 };
+                if ($scope.nbActions1 == 2 && $scope.nbActions2 == 2) {
+                    $scope.analysis.mixedStrategy = game.getMixedStrategy();
+                }
             }
         };
         $scope.isPSNE = function(i,j){
@@ -141,6 +230,28 @@
                 }
             }
             return false;
+        };
+
+        var standardGames = {
+            prisoner: {
+                size: [2, 2],
+                payoffs: [
+                    [
+                        [-1, -1],
+                        [-4, 0]
+                    ], [
+                        [0, -4],
+                        [-3, -3]
+                    ]
+                ]
+            }
+        };
+
+        $scope.loadPayoffs = function(name) {
+            $scope.payoffs = standardGames[name].payoffs;
+            $scope.nbActions1 = standardGames[name].size[0];
+            $scope.nbActions2 = standardGames[name].size[1];
+            $scope.analysis = null;
         };
     }
 
